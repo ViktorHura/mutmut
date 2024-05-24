@@ -1166,6 +1166,7 @@ def run_mutation_tests(config, progress, mutations_by_file):
     # Need to explicitly use the spawn method for python < 3.8 on macOS
     mp_ctx = multiprocessing.get_context('spawn')
 
+    #annotation# creates queues for the mutants and their results and then uses a second thread to queue all of them?
     mutants_queue = mp_ctx.Queue(maxsize=100)
     add_to_active_queues(mutants_queue)
     queue_mutants_thread = Thread(
@@ -1184,6 +1185,7 @@ def run_mutation_tests(config, progress, mutations_by_file):
     results_queue = mp_ctx.Queue(maxsize=100)
     add_to_active_queues(results_queue)
 
+    #annotation# this worker will do all the testing of mutants?
     def create_worker():
         t = mp_ctx.Process(
             target=check_mutants,
@@ -1200,6 +1202,7 @@ def run_mutation_tests(config, progress, mutations_by_file):
 
     t = create_worker()
 
+    #annotation# here we wait for the worker to finish testing all mutants while also receiving status updates from said worker and updating UI
     while True:
         command, status, filename, mutation_id = results_queue.get()
         if command == 'end':
