@@ -454,7 +454,7 @@ def name_mutation(node, value, **_):
     if function_call_pattern.matches(node=node):
         return 'None'
 
-
+#annotation# map what attribute from the node to mutate, with a function that will mutate said attribute
 mutations_by_type = {
     'operator': dict(value=operator_mutation),
     'keyword': dict(value=keyword_mutation),
@@ -569,12 +569,15 @@ def mutate(context):
     :rtype: Tuple[str, int]
     """
     try:
+        #annotation# this generates the AST for the current source code
         result = parse(context.source, error_recovery=False)
     except Exception:
         print('Failed to parse {}. Internal error from parso follows.'.format(context.filename))
         print('----------------------------------')
         raise
+    #annotation# possible entry point to insert visitors?
     mutate_list_of_nodes(result, context=context)
+    #annotation# big code smell right here
     mutated_source = result.get_code().replace(' not not ', ' ')
     if context.remove_newline_at_end:
         assert mutated_source[-1] == '\n'
@@ -594,6 +597,7 @@ def mutate_node(node, context):
     """
     :type context: Context
     """
+    #annotation# for traversal? depth first
     context.stack.append(node)
     try:
         if node.type in ('tfpdef', 'import_from', 'import_name'):
@@ -616,12 +620,15 @@ def mutate_node(node, context):
             return
 
         if hasattr(node, 'children'):
+            #annotation# first process children recursively?
             mutate_list_of_nodes(node, context=context)
 
             # this is just an optimization to stop early
             if context.performed_mutation_ids and context.mutation_id != ALL:
                 return
 
+        #annotation# outputs a dictionary in which the key is the attribute of the node, to be mutated
+        #annotation# the value is a function pointer, which will do this mutation on said attribute
         mutation = mutations_by_type.get(node.type)
 
         if mutation is None:
@@ -632,6 +639,7 @@ def mutate_node(node, context):
             if context.exclude_line():
                 continue
 
+            #annotation# call function pointer with a bunch of parameters, not all may be used
             new = value(
                 context=context,
                 node=node,
@@ -639,6 +647,7 @@ def mutate_node(node, context):
                 children=getattr(node, 'children', None),
             )
 
+            #annotation# newlist is the list of mutated values
             if isinstance(new, list) and not isinstance(old, list):
                 # multiple mutations
                 new_list = new
@@ -655,8 +664,10 @@ def mutate_node(node, context):
                     if hasattr(mutmut_config, 'pre_mutation_ast'):
                         mutmut_config.pre_mutation_ast(context=context)
                     if context.should_mutate(node):
+                        #annotation# actual mutation here?
                         context.performed_mutation_ids.append(context.mutation_id_of_current_index)
                         setattr(node, key, new)
+                    #annotation# this index tracks every mutation? - per line
                     context.index += 1
                 # this is just an optimization to stop early
                 if context.performed_mutation_ids and context.mutation_id != ALL:
@@ -669,6 +680,7 @@ def mutate_list_of_nodes(node, context):
     """
     :type context: Context
     """
+    #annotation# I think he means to skip this: https://stackoverflow.com/a/56002484
     return_annotation_started = False
 
     for child_node in node.children:
@@ -1258,8 +1270,10 @@ def add_mutations_by_file(mutations_by_file, filename, dict_synonyms, config):
     )
 
     try:
+        #annotation# create all possible mutants for this file
         mutations_by_file[filename] = list_mutations(context)
         from mutmut.cache import register_mutants
+        #annotation# save mutants to cache
         register_mutants(mutations_by_file)
     except Exception as e:
         raise RuntimeError('Failed while creating mutations for {}, for line "{}"'.format(context.filename, context.current_source_line)) from e
