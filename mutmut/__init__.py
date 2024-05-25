@@ -26,9 +26,8 @@ from threading import (
 from time import time
 
 from parso import parse
-from parso.python.tree import Name, Number, Keyword, FStringStart, FStringEnd
-import utils
 import mutations_strategy
+from mutmut.ast_iterators import LevelOrder_Iterator as AST_Iterator
 __version__ = '2.4.4'
 
 
@@ -58,23 +57,6 @@ class RelativeMutationID(object):
 
 
 ALL = RelativeMutationID(filename='%all%', line='%all%', index=-1, line_number=-1)
-
-
-
-# We have a global whitelist for constants of the pattern __all__, __version__, etc
-
-dunder_whitelist = [
-    'all',
-    'version',
-    'title',
-    'package_name',
-    'author',
-    'description',
-    'email',
-    'version',
-    'license',
-    'copyright',
-]
 
 
 class SkipException(Exception):
@@ -157,6 +139,7 @@ class Context(object):
         self._path_by_line = None
         self.config = config
         self.skip = False
+        self.index_per_line = {}
 
     def exclude_line(self):
         return self.current_line_index in self.pragma_no_mutate_lines or should_exclude(context=self, config=self.config)
@@ -219,10 +202,13 @@ def mutate(context):
         print('Failed to parse {}. Internal error from parso follows.'.format(context.filename))
         print('----------------------------------')
         raise
-    #annotation# possible entry point to insert visitors?
-    mutate_list_of_nodes(result, context=context)
-    #annotation# big code smell right here
+
+    #annotation# entry point to our patterns
+    ast_iterator = iter(AST_Iterator(result))
+
+    mutate_ast(ast_iterator, context=context)
     mutated_source = result.get_code().replace(' not not ', ' ')
+
     if context.remove_newline_at_end:
         assert mutated_source[-1] == '\n'
         mutated_source = mutated_source[:-1]
@@ -241,35 +227,9 @@ def mutate_node(node, context):
     """
     :type context: Context
     """
-    #annotation# for traversal? depth first
-    context.stack.append(node)
     try:
-        if node.type in ('tfpdef', 'import_from', 'import_name'):
-            return
-
-        if node.type == 'atom_expr' and node.children and node.children[0].type == 'name' and node.children[0].value == '__import__':
-            return
-
-        if node.start_pos[0] - 1 != context.current_line_index:
-            context.current_line_index = node.start_pos[0] - 1
-            context.index = 0  # indexes are unique per line, so start over here!
-
-        if node.type == 'expr_stmt':
-            if node.children[0].type == 'name' and node.children[0].value.startswith('__') and node.children[0].value.endswith('__'):
-                if node.children[0].value[2:-2] in dunder_whitelist:
-                    return
-
-        # Avoid mutating pure annotations
-        if node.type == 'annassign' and len(node.children) == 2:
-            return
-
-        if hasattr(node, 'children'):
-            #annotation# first process children recursively?
-            mutate_list_of_nodes(node, context=context)
-
-            # this is just an optimization to stop early
-            if context.performed_mutation_ids and context.mutation_id != ALL:
-                return
+        context.current_line_index = node.start_pos[0] - 1
+        context.index = context.index_per_line[context.current_line_index]
 
         # get mutation based on node type
         strategy = mutations_strategy.StrategyFactory().get_strategy(node.type)
@@ -305,44 +265,46 @@ def mutate_node(node, context):
             for new in reversed(new_list):
                 assert not callable(new)
                 if new is not None and new != old:
+                    context.index = context.index_per_line[context.current_line_index]
                     if hasattr(mutmut_config, 'pre_mutation_ast'):
                         mutmut_config.pre_mutation_ast(context=context)
                     if context.should_mutate(node):
-                        #annotation# actual mutation here?
                         context.performed_mutation_ids.append(context.mutation_id_of_current_index)
                         setattr(node, key, new)
-                    #annotation# this index tracks every mutation? - per line
-                    context.index += 1
+                    context.index_per_line[context.current_line_index] += 1
                 # this is just an optimization to stop early
                 if context.performed_mutation_ids and context.mutation_id != ALL:
                     return
     finally:
-        context.stack.pop()
+        pass
 
 
-def mutate_list_of_nodes(node, context):
+def mutate_ast(ast_iterator, context):
     """
     :type context: Context
     """
     #annotation# I think he means to skip this: https://stackoverflow.com/a/56002484
     return_annotation_started = False
 
-    for child_node in node.children:
-        if child_node.type == 'operator' and child_node.value == '->':
+    context.index_per_line = {}
+    for i in range(len(context.source_by_line_number)):
+        context.index_per_line[i] = 0
+
+    for node, stack in iter(ast_iterator):
+        context.stack = stack
+
+        if node.type == 'operator' and node.value == '->':
             return_annotation_started = True
 
-        if return_annotation_started and child_node.type == 'operator' and child_node.value == ':':
+        if return_annotation_started and node.type == 'operator' and node.value == ':':
             return_annotation_started = False
 
         if return_annotation_started:
             continue
 
-        mutate_node(child_node, context=context)
-
-        # this is just an optimization to stop early
-        if context.performed_mutation_ids and context.mutation_id != ALL:
-            return
-
+        mutate_node(node, context=context)
+    context.stack = []
+    
 
 def list_mutations(context):
     """
