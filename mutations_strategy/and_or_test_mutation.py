@@ -8,3 +8,6 @@ class AndOrTestMutation(Mutation):
             start_pos=node.start_pos,
         )
         return children
+
+    def get_mutate_pointer(self):
+        return dict(children=self.mutate)

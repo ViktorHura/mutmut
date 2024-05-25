@@ -100,19 +100,19 @@ MUTANT_STATUSES = {
 
 #annotation# map what attribute from the node to mutate, with a function that will mutate said attribute
 mutations_by_type = {
-    'operator': dict(value=mutations_strategy.OperatorMutation().mutate),
-    'keyword': dict(value=mutations_strategy.KeywordMutation().mutate),
-    'number': dict(value=mutations_strategy.NumberMutation().mutate),
-    'name': dict(value=mutations_strategy.NameMutation().mutate),
-    'string': dict(value=mutations_strategy.StringMutation().mutate),
-    'fstring': dict(children=mutations_strategy.FStringMutation().mutate),
-    'argument': dict(children=mutations_strategy.ArgumentMutation().mutate),
-    'or_test': dict(children=mutations_strategy.AndOrTestMutation().mutate),
-    'and_test': dict(children=mutations_strategy.AndOrTestMutation().mutate),
-    'lambdef': dict(children=mutations_strategy.LambdaMutation().mutate),
-    'expr_stmt': dict(children=mutations_strategy.ExpressionMutation().mutate),
-    'decorator': dict(children=mutations_strategy.DecoratorMutation().mutate),
-    'annassign': dict(children=mutations_strategy.ExpressionMutation().mutate),
+    'operator': mutations_strategy.OperatorMutation().get_mutate_pointer(),
+    'keyword': mutations_strategy.KeywordMutation().get_mutate_pointer(),
+    'number': mutations_strategy.NumberMutation().get_mutate_pointer(),
+    'name': mutations_strategy.NameMutation().get_mutate_pointer(),
+    'string': mutations_strategy.StringMutation().get_mutate_pointer(),
+    'fstring': mutations_strategy.FStringMutation().get_mutate_pointer(),
+    'argument': mutations_strategy.ArgumentMutation().get_mutate_pointer(),
+    'or_test': mutations_strategy.AndOrTestMutation().get_mutate_pointer(),
+    'and_test': mutations_strategy.AndOrTestMutation().get_mutate_pointer(),
+    'lambdef': mutations_strategy.LambdaMutation().get_mutate_pointer(),
+    'expr_stmt': mutations_strategy.ExpressionMutation().get_mutate_pointer(),
+    'decorator': mutations_strategy.DecoratorMutation().get_mutate_pointer(),
+    'annassign': mutations_strategy.ExpressionMutation().get_mutate_pointer(),
 }
 
 # TODO: detect regexes and mutate them in nasty ways? Maybe mutate all strings as if they are regexes
@@ -274,7 +274,6 @@ def mutate_node(node, context):
         #annotation# outputs a dictionary in which the key is the attribute of the node, to be mutated
         #annotation# the value is a function pointer, which will do this mutation on said attribute
         mutation = mutations_by_type.get(node.type)
-
         if mutation is None:
             return
 

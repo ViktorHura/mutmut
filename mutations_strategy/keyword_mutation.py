@@ -18,3 +18,6 @@ class KeywordMutation(Mutation):
             'True': 'False',
             'False': 'True',
         }.get(value)
+
+    def get_mutate_pointer(self):
+        return dict(value=self.mutate)

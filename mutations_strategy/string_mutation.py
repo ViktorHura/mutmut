@@ -10,3 +10,6 @@ class StringMutation(Mutation):
             # that mutation is meaningless for
             return prefix + value
         return prefix + value[0] + 'XX' + value[1:-1] + 'XX' + value[-1]
+
+    def get_mutate_pointer(self):
+        return dict(value=self.mutate)

@@ -14,3 +14,5 @@ class LambdaMutation(Mutation):
             return pre + [op] + [Number(value=' 0', start_pos=post[0].start_pos)]
         else:
             return pre + [op] + [Keyword(value=' None', start_pos=post[0].start_pos)]
+    def get_mutate_pointer(self):
+        return dict(children=self.mutate)

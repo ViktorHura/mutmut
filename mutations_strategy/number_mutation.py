@@ -42,3 +42,6 @@ class NumberMutation(Mutation):
         if not result.endswith(suffix):
             result += suffix
         return result
+
+    def get_mutate_pointer(self):
+        return dict(value=self.mutate)

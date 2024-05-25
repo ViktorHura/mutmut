@@ -57,3 +57,6 @@ from _name import *
             '!=': '==',
             '<>': '==',
         }.get(value)
+
+    def get_mutate_pointer(self):
+        return dict(value=self.mutate)

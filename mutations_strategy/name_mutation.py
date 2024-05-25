@@ -38,3 +38,6 @@ _name(_any)
 
         if self.function_call_pattern.matches(node=node):
             return 'None'
+
+    def get_mutate_pointer(self):
+        return dict(value=self.mutate)

@@ -16,3 +16,6 @@ class FStringMutation(Mutation):
                                   prefix=fstring_end.prefix)
 
         return children
+
+    def get_mutate_pointer(self):
+        return dict(children=self.mutate)

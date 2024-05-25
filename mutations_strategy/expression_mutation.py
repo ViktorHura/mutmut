@@ -19,5 +19,7 @@ class ExpressionMutation(Mutation):
                 children[1:] = handle_assignment(children[1:])
         elif children[1].type == 'operator' and children[1].value == '=':
             children = handle_assignment(children)
-
         return children
+
+    def get_mutate_pointer(self):
+        return dict(children=self.mutate)

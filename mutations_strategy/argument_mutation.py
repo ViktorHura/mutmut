@@ -23,3 +23,6 @@ class ArgumentMutation(Mutation):
                 children = children[:]
                 children[0] = Name(c.value + 'XX', start_pos=c.start_pos, prefix=c.prefix)
                 return children
+
+    def get_mutate_pointer(self):
+        return dict(children=self.mutate)
