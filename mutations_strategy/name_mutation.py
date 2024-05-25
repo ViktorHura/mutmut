@@ -1,15 +1,27 @@
 from mutations_strategy.mutation import Mutation
 import utils
+array_subscript_pattern = utils.ASTPattern("""
+_name[_any]
+#       ^
+""")
+
+
+function_call_pattern = utils.ASTPattern("""
+_name(_any)
+#       ^
+""")
 class NameMutation(Mutation):
     def __init__(self):
-        self.array_subscript_pattern = utils.ASTPattern("""
-        _name[_any]
-        #       ^
-        """)
+        self.array_subscript_pattern = utils.ASTPattern(""" # no tabs, or test_mutation.py will fail
+_name[_any]
+#       ^
+""")
+
         self.function_call_pattern = utils.ASTPattern("""
-        _name(_any)
-        #       ^
-        """)
+_name(_any)
+#       ^
+""")
+
     def mutate(self, node, value, **_):
         simple_mutants = {
             'True': 'False',

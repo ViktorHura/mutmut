@@ -3,31 +3,31 @@
 import pytest
 from parso import parse
 
-from mutmut import mutate, ALL, Context, list_mutations, RelativeMutationID, \
-    array_subscript_pattern, function_call_pattern, ASTPattern
-
+from mutmut import mutate, ALL, Context, list_mutations, RelativeMutationID
+import mutations_strategy
+import utils
 
 def test_matches_py3():
     node = parse('a: Optional[int] = 7\n').children[0].children[0].children[1].children[1].children[1].children[1]
-    assert not array_subscript_pattern.matches(node=node)
+    assert not mutations_strategy.NameMutation().array_subscript_pattern.matches(node=node)
 
 
 def test_matches():
     node = parse('from foo import bar').children[0]
-    assert not array_subscript_pattern.matches(node=node)
-    assert not function_call_pattern.matches(node=node)
-    assert not array_subscript_pattern.matches(node=node)
-    assert not function_call_pattern.matches(node=node)
+    assert not mutations_strategy.NameMutation().array_subscript_pattern.matches(node=node)
+    assert not mutations_strategy.NameMutation().function_call_pattern.matches(node=node)
+    assert not mutations_strategy.NameMutation().array_subscript_pattern.matches(node=node)
+    assert not mutations_strategy.NameMutation().function_call_pattern.matches(node=node)
 
     node = parse('foo[bar]\n').children[0].children[0].children[1].children[1]
-    assert array_subscript_pattern.matches(node=node)
+    assert mutations_strategy.NameMutation().array_subscript_pattern.matches(node=node)
 
     node = parse('foo(bar)\n').children[0].children[0].children[1].children[1]
-    assert function_call_pattern.matches(node=node)
+    assert mutations_strategy.NameMutation().function_call_pattern.matches(node=node)
 
 
 def test_ast_pattern_for_loop():
-    p = ASTPattern(
+    p = utils.ASTPattern(
         """
 for x in y:
 #   ^ n  ^ match
