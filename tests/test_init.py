@@ -3,10 +3,8 @@ from pathlib import Path
 from time import sleep
 from pytest import raises, fixture
 from unittest.mock import MagicMock, patch
-
+import mutations_strategy
 from mutmut import (
-    partition_node_list,
-    name_mutation,
     run_mutation_tests,
     check_mutants,
     close_active_queues,
@@ -18,11 +16,11 @@ from mutmut import (
 
 def test_partition_node_list_no_nodes():
     with raises(AssertionError):
-        partition_node_list([], None)
+        mutations_strategy.LambdaMutation().partition_node_list([], None)
 
 
 def test_name_mutation_simple_mutants():
-    assert name_mutation(None, 'True') == 'False'
+    assert mutations_strategy.NameMutation().mutate(None, 'True') == 'False'
 
 
 def test_context_exclude_line():
