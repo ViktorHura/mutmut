@@ -273,9 +273,14 @@ def mutate_node(node, context):
 
         #annotation# outputs a dictionary in which the key is the attribute of the node, to be mutated
         #annotation# the value is a function pointer, which will do this mutation on said attribute
-        mutation = mutations_by_type.get(node.type)
-        if mutation is None:
+        # mutation = mutations_by_type.get(node.type)
+        # if mutation is None:
+        #     return
+
+        strategy = mutations_strategy.StrategyFactory().get_strategy(node.type)
+        if strategy is None:
             return
+        mutation = strategy.get_mutate_pointer()
 
         for key, value in sorted(mutation.items()):
             old = getattr(node, key)

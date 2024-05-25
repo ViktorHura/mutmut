@@ -9,3 +9,4 @@ from .operator_mutation import OperatorMutation
 from .keyword_mutation import KeywordMutation
 from .number_mutation import NumberMutation
 from .name_mutation import NameMutation
+from .mutation_factory import StrategyFactory
