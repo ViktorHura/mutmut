@@ -28,6 +28,7 @@ from time import time
 from parso import parse
 from parso.python.tree import Name, Number, Keyword, FStringStart, FStringEnd
 import utils
+import mutations_strategy
 __version__ = '2.4.4'
 
 
@@ -357,19 +358,19 @@ def name_mutation(node, value, **_):
 
 #annotation# map what attribute from the node to mutate, with a function that will mutate said attribute
 mutations_by_type = {
-    'operator': dict(value=operator_mutation),
-    'keyword': dict(value=keyword_mutation),
-    'number': dict(value=number_mutation),
-    'name': dict(value=name_mutation),
-    'string': dict(value=string_mutation),
-    'fstring': dict(children=fstring_mutation),
-    'argument': dict(children=argument_mutation),
-    'or_test': dict(children=and_or_test_mutation),
-    'and_test': dict(children=and_or_test_mutation),
-    'lambdef': dict(children=lambda_mutation),
-    'expr_stmt': dict(children=expression_mutation),
-    'decorator': dict(children=decorator_mutation),
-    'annassign': dict(children=expression_mutation),
+    'operator': dict(value=mutations_strategy.OperatorMutation().mutate),
+    'keyword': dict(value=mutations_strategy.KeywordMutation().mutate),
+    'number': dict(value=mutations_strategy.NumberMutation().mutate),
+    'name': dict(value=mutations_strategy.NameMutation().mutate),
+    'string': dict(value=mutations_strategy.StringMutation().mutate),
+    'fstring': dict(children=mutations_strategy.FStringMutation().mutate),
+    'argument': dict(children=mutations_strategy.ArgumentMutation().mutate),
+    'or_test': dict(children=mutations_strategy.AndOrTestMutation().mutate),
+    'and_test': dict(children=mutations_strategy.AndOrTestMutation().mutate),
+    'lambdef': dict(children=mutations_strategy.LambdaMutation().mutate),
+    'expr_stmt': dict(children=mutations_strategy.ExpressionMutation().mutate),
+    'decorator': dict(children=mutations_strategy.DecoratorMutation().mutate),
+    'annassign': dict(children=mutations_strategy.ExpressionMutation().mutate),
 }
 
 # TODO: detect regexes and mutate them in nasty ways? Maybe mutate all strings as if they are regexes
