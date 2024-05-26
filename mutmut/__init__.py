@@ -433,7 +433,7 @@ class Config(object):
                  baseline_time_elapsed, test_time_multiplier, test_time_base,
                  dict_synonyms, total, using_testmon,
                  tests_dirs, hash_of_tests, pre_mutation, post_mutation,
-                 coverage_data, paths_to_mutate, mutation_types_to_apply, no_progress, ci, rerun_all):
+                 coverage_data, paths_to_mutate, mutation_types_to_apply, no_progress, ci, rerun_all, parallel):
         self.swallow_output = swallow_output
         self.test_command = self._default_test_command = test_command
         self.covered_lines_by_filename = covered_lines_by_filename
@@ -453,6 +453,7 @@ class Config(object):
         self.no_progress = no_progress
         self.ci = ci
         self.rerun_all = rerun_all
+        self.parallel = parallel
 
 
 def tests_pass(config: Config, callback) -> bool:

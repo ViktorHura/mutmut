@@ -118,6 +118,7 @@ def version():
 @click.option('--simple-output', is_flag=True, default=False, help="Swap emojis in mutmut output to plain text alternatives.")
 @click.option('--no-progress', is_flag=True, default=False, help="Disable real-time progress indicator")
 @click.option('--CI', is_flag=True, default=False, help="Returns an exit code of 0 for all successful runs and an exit code of 1 for fatal errors.")
+@click.option('--parallel', type=click.STRING, help='\"pid,pnum\" where pid is the process id (starting at 1) and pnum is the total number of processes you will be running')
 @config_from_file(
     dict_synonyms='',
     paths_to_exclude='',
@@ -130,7 +131,7 @@ def version():
 def run(argument, paths_to_mutate, disable_mutation_types, enable_mutation_types, runner,
         tests_dir, test_time_multiplier, test_time_base, swallow_output, use_coverage,
         dict_synonyms, pre_mutation, post_mutation, use_patch_file, paths_to_exclude,
-        simple_output, no_progress, ci, rerun_all):
+        simple_output, no_progress, ci, rerun_all, parallel):
     """
     Runs mutmut. You probably want to start with just trying this. If you supply a mutation ID mutmut will check just this mutant.
     """
@@ -142,7 +143,7 @@ def run(argument, paths_to_mutate, disable_mutation_types, enable_mutation_types
     sys.exit(do_run(argument, paths_to_mutate, disable_mutation_types, enable_mutation_types, runner,
                     tests_dir, test_time_multiplier, test_time_base, swallow_output, use_coverage,
                     dict_synonyms, pre_mutation, post_mutation, use_patch_file, paths_to_exclude,
-                    simple_output, no_progress, ci, rerun_all))
+                    simple_output, no_progress, ci, rerun_all, parallel))
 
 
 @climain.command(context_settings=dict(help_option_names=['-h', '--help']))
@@ -237,10 +238,36 @@ def html(dict_synonyms):
     sys.exit(0)
 
 
+def parallel_test_subset(pid, pnum, mutations_by_file):
+    subset_mutations = {}
+    all_mutations = []
+    for name, mutations in mutations_by_file.items():
+        for m in mutations:
+            all_mutations.append((name, m))
+
+    tot = len(all_mutations)
+    work_per_pid = []
+    avg_work = int(tot / pnum)
+    for i in range(pnum):
+        if i != pnum - 1:
+            work_per_pid.append(avg_work)
+            tot -= avg_work
+        else:
+            work_per_pid.append(tot)
+
+    begin = sum([work_per_pid[i] for i in range(pid - 1)])
+    end = begin + work_per_pid[pid - 1]
+    for name, m in all_mutations[begin:end]:
+        if name not in subset_mutations:
+            subset_mutations[name] = []
+        subset_mutations[name].append(m)
+    return subset_mutations
+
+
 def do_run(argument, paths_to_mutate, disable_mutation_types,
            enable_mutation_types, runner, tests_dir, test_time_multiplier, test_time_base,
            swallow_output, use_coverage, dict_synonyms, pre_mutation, post_mutation,
-           use_patch_file, paths_to_exclude, simple_output, no_progress, ci, rerun_all):
+           use_patch_file, paths_to_exclude, simple_output, no_progress, ci, rerun_all, parallel):
     """return exit code, after performing an mutation test run.
 
     :return: the exit code from executing the mutation tests
@@ -374,6 +401,10 @@ Legend for output:
         paths_to_exclude = [path.strip() for path in paths_to_exclude.replace(',', '\n').split('\n')]
         paths_to_exclude = [x for x in paths_to_exclude if x]
 
+    if parallel:
+        pid, pnum = [int(x) for x in parallel.split(',', 2)]
+        parallel = (pid, pnum)
+
     config = Config(
         total=0,  # we'll fill this in later!
         swallow_output=not swallow_output,
@@ -393,10 +424,17 @@ Legend for output:
         mutation_types_to_apply=mutation_types_to_apply,
         no_progress=no_progress,
         ci=ci,
-        rerun_all=rerun_all
+        rerun_all=rerun_all,
+        parallel=parallel
     )
 
     parse_run_argument(argument, config, dict_synonyms, mutations_by_file, paths_to_exclude, paths_to_mutate, tests_dirs)
+
+    if parallel:
+        pid, pnum = parallel
+        # take only the subset of the tests to evaluate by this process
+        mutations_by_file = parallel_test_subset(pid, pnum, mutations_by_file)
+
 
     config.total = sum(len(mutations) for mutations in mutations_by_file.values())
 
