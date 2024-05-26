@@ -80,26 +80,6 @@ MUTANT_STATUSES = {
     "untested": UNTESTED,
 }
 
-#annotation# map what attribute from the node to mutate, with a function that will mutate said attribute
-mutations_by_type = {
-    'operator': mutations_strategy.OperatorMutation().get_mutate_pointer(),
-    'keyword': mutations_strategy.KeywordMutation().get_mutate_pointer(),
-    'number': mutations_strategy.NumberMutation().get_mutate_pointer(),
-    'name': mutations_strategy.NameMutation().get_mutate_pointer(),
-    'string': mutations_strategy.StringMutation().get_mutate_pointer(),
-    'fstring': mutations_strategy.FStringMutation().get_mutate_pointer(),
-    'argument': mutations_strategy.ArgumentMutation().get_mutate_pointer(),
-    'or_test': mutations_strategy.AndOrTestMutation().get_mutate_pointer(),
-    'and_test': mutations_strategy.AndOrTestMutation().get_mutate_pointer(),
-    'lambdef': mutations_strategy.LambdaMutation().get_mutate_pointer(),
-    'expr_stmt': mutations_strategy.ExpressionMutation().get_mutate_pointer(),
-    'decorator': mutations_strategy.DecoratorMutation().get_mutate_pointer(),
-    'annassign': mutations_strategy.ExpressionMutation().get_mutate_pointer(),
-}
-
-# TODO: detect regexes and mutate them in nasty ways? Maybe mutate all strings as if they are regexes
-
-
 def should_exclude(context, config):
     if config is None or config.covered_lines_by_filename is None:
         return False

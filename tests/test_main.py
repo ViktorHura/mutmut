@@ -19,14 +19,14 @@ from click.testing import CliRunner
 
 from mutmut import (
     compute_exit_code,
-    mutations_by_type,
     popen_streaming_output,
     Progress,
     python_source_files,
     read_coverage_data,
     MUTANT_STATUSES,
     __version__,
-    AST_Iterator
+    AST_Iterator,
+    mutations_strategy
 )
 from mutmut.__main__ import climain
 
@@ -627,7 +627,7 @@ def test_select_unknown_mutation_type(option):
         ]
     )
     assert result.exception.code == 2
-    assert f"The following are not valid mutation types: bar, foo. Valid mutation types are: {', '.join(mutations_by_type.keys())}" in result.output, result.output
+    assert f"The following are not valid mutation types: bar, foo. Valid mutation types are: {', '.join(mutations_strategy.StrategyFactory.get_mutations_dict().keys())}" in result.output, result.output
 
 
 def test_enable_and_disable_mutation_type_are_exclusive():

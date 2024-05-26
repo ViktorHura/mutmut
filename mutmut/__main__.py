@@ -20,7 +20,6 @@ from mutmut import (
     MUTANT_STATUSES,
     Context,
     __version__,
-    mutations_by_type,
     mutmut_config,
     config_from_file,
     guess_paths_to_mutate,
@@ -37,6 +36,8 @@ from mutmut import (
     print_status,
     close_active_queues,
 )
+from mutmut import mutations_strategy
+
 from mutmut.cache import (
     create_html_report,
     cached_hash_of_tests,
@@ -250,6 +251,8 @@ def do_run(argument, paths_to_mutate, disable_mutation_types,
 
     if disable_mutation_types and enable_mutation_types:
         raise click.BadArgumentUsage("You can't combine --disable-mutation-types and --enable-mutation-types")
+
+    mutations_by_type = mutations_strategy.StrategyFactory.get_mutations_dict()
     if enable_mutation_types:
         mutation_types_to_apply = set(mtype.strip() for mtype in enable_mutation_types.split(","))
         invalid_types = [mtype for mtype in mutation_types_to_apply if mtype not in mutations_by_type]
