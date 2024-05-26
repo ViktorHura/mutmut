@@ -28,7 +28,7 @@ from time import time
 from parso import parse
 import mutations_strategy
 from mutmut.ast_iterators import LevelOrder_Iterator as AST_Iterator
-__version__ = '2.4.4'
+__version__ = '2.4.4R'
 
 
 if os.getcwd() not in sys.path:

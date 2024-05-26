@@ -3,7 +3,7 @@
 import pytest
 from parso import parse
 
-from mutmut import mutate, ALL, Context, list_mutations, RelativeMutationID
+from mutmut import mutate, ALL, Context, list_mutations, RelativeMutationID, AST_Iterator
 import mutations_strategy
 import utils
 
@@ -127,7 +127,7 @@ def test_basic_mutations(original, expected):
     assert actual == expected, 'Performed {} mutations for original "{}"'.format(number_of_performed_mutations, original)
 
 
-def test_fstring_mutation_fstring_is_mutated_separately_from_other_mutations():
+def test_fstring_mutation_fstring_is_mutated_separately_from_other_mutations_PO():
     # arrange
     original = "f'fo{x == 1}o'"
     expected_mutations = ["f'fo{x != 1}o'", "f'fo{x == 2}o'", "f'XXfo{x == 1}oXX'"]
@@ -137,7 +137,22 @@ def test_fstring_mutation_fstring_is_mutated_separately_from_other_mutations():
                         for mutation in list_mutations(Context(source=original))]
 
     # assert
-    assert actual_mutations == expected_mutations
+    if AST_Iterator.type == 'PostOrder':
+        assert actual_mutations == expected_mutations
+
+
+def test_fstring_mutation_fstring_is_mutated_separately_from_other_mutations_LO():
+    # arrange
+    original = "f'fo{x == 1}o'"
+    expected_mutations = ["f'XXfo{x == 1}oXX'", "f'fo{x != 1}o'", "f'fo{x == 2}o'"]
+
+    # act
+    actual_mutations = [mutate(Context(source=original, mutation_id=mutation))[0]
+                        for mutation in list_mutations(Context(source=original))]
+
+    # assert
+    if AST_Iterator.type == 'LevelOrder':
+        assert actual_mutations == expected_mutations
 
 
 @pytest.mark.parametrize(
@@ -237,12 +252,22 @@ def test_mutate_all():
     assert mutate(Context(source='def foo():\n    return 1+1', mutation_id=ALL)) == ('def foo():\n    return 2-2', 3)
 
 
-def test_mutate_both():
+def test_mutate_both_PO():
     source = 'a = b + c'
     mutations = list_mutations(Context(source=source))
     assert len(mutations) == 2
-    assert mutate(Context(source=source, mutation_id=mutations[0])) == ('a = b - c', 1)
-    assert mutate(Context(source=source, mutation_id=mutations[1])) == ('a = None', 1)
+    if AST_Iterator.type == 'PostOrder':
+        assert mutate(Context(source=source, mutation_id=mutations[0])) == ('a = b - c', 1)
+        assert mutate(Context(source=source, mutation_id=mutations[1])) == ('a = None', 1)
+
+
+def test_mutate_both_LO():
+    source = 'a = b + c'
+    mutations = list_mutations(Context(source=source))
+    assert len(mutations) == 2
+    if AST_Iterator.type == 'LevelOrder':
+        assert mutate(Context(source=source, mutation_id=mutations[1])) == ('a = b - c', 1)
+        assert mutate(Context(source=source, mutation_id=mutations[0])) == ('a = None', 1)
 
 
 def test_perform_one_indexed_mutation():
@@ -254,16 +279,32 @@ def test_perform_one_indexed_mutation():
     # assert mutate(Context(source='def foo():\n    return 1', mutation_id=2)) == ('def foo():\n    return 1\n', 0)
 
 
-def test_function():
+def test_function_PO():
     source = "def capitalize(s):\n    return s[0].upper() + s[1:] if s else s\n"
-    assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 0, line_number=1))) == ("def capitalize(s):\n    return s[1].upper() + s[1:] if s else s\n", 1)
-    assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 1, line_number=1))) == ("def capitalize(s):\n    return s[0].upper() - s[1:] if s else s\n", 1)
-    assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 2, line_number=1))) == ("def capitalize(s):\n    return s[0].upper() + s[2:] if s else s\n", 1)
+    if AST_Iterator.type == 'PostOrder':
+        assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 0, line_number=1))) == ("def capitalize(s):\n    return s[1].upper() + s[1:] if s else s\n", 1)
+        assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 1, line_number=1))) == ("def capitalize(s):\n    return s[0].upper() - s[1:] if s else s\n", 1)
+        assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 2, line_number=1))) == ("def capitalize(s):\n    return s[0].upper() + s[2:] if s else s\n", 1)
 
 
-def test_function_with_annotation():
+def test_function_LO():
+    source = "def capitalize(s):\n    return s[0].upper() + s[1:] if s else s\n"
+    if AST_Iterator.type == 'LevelOrder':
+        assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 1, line_number=1))) == ("def capitalize(s):\n    return s[1].upper() + s[1:] if s else s\n", 1)
+        assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 0, line_number=1))) == ("def capitalize(s):\n    return s[0].upper() - s[1:] if s else s\n", 1)
+        assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 2, line_number=1))) == ("def capitalize(s):\n    return s[0].upper() + s[2:] if s else s\n", 1)
+
+
+def test_function_with_annotation_PO():
     source = "def capitalize(s : str):\n    return s[0].upper() + s[1:] if s else s\n"
-    assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 0, line_number=1))) == ("def capitalize(s : str):\n    return s[1].upper() + s[1:] if s else s\n", 1)
+    if AST_Iterator.type == 'PostOrder':
+        assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 0, line_number=1))) == ("def capitalize(s : str):\n    return s[1].upper() + s[1:] if s else s\n", 1)
+
+
+def test_function_with_annotation_LO():
+    source = "def capitalize(s : str):\n    return s[0].upper() + s[1:] if s else s\n"
+    if AST_Iterator.type == 'LevelOrder':
+        assert mutate(Context(source=source, mutation_id=RelativeMutationID(source.split('\n')[1], 1, line_number=1))) == ("def capitalize(s : str):\n    return s[1].upper() + s[1:] if s else s\n", 1)
 
 
 def test_pragma_no_mutate():
@@ -378,12 +419,22 @@ __all__ = [
     assert mutate(Context(source=source)) == (source, 0)
 
 
-def test_bug_github_issue_162():
+def test_bug_github_issue_162_PO():
     source = """
 primes: List[int] = []
 foo = 'bar'
 """
-    assert mutate(Context(source=source, mutation_id=RelativeMutationID("foo = 'bar'", 0, 2))) == (source.replace("'bar'", "'XXbarXX'"), 1)
+    if AST_Iterator.type == 'PostOrder':
+        assert mutate(Context(source=source, mutation_id=RelativeMutationID("foo = 'bar'", 0, 2))) == (source.replace("'bar'", "'XXbarXX'"), 1)
+
+
+def test_bug_github_issue_162_LO():
+    source = """
+primes: List[int] = []
+foo = 'bar'
+"""
+    if AST_Iterator.type == 'LevelOrder':
+        assert mutate(Context(source=source, mutation_id=RelativeMutationID("foo = 'bar'", 1, 2))) == (source.replace("'bar'", "'XXbarXX'"), 1)
 
 
 def test_bad_mutation_str_type_definition():

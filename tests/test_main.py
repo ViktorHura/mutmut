@@ -26,6 +26,7 @@ from mutmut import (
     read_coverage_data,
     MUTANT_STATUSES,
     __version__,
+    AST_Iterator
 )
 from mutmut.__main__ import climain
 
@@ -376,7 +377,7 @@ Survived 🙁 (14)
 """.strip()
 
 
-def test_full_run_one_surviving_mutant(filesystem):
+def test_full_run_one_surviving_mutant_PO(filesystem):
     with open(os.path.join(str(filesystem), "tests", "test_foo.py"), 'w') as f:
         f.write(test_file_contents.replace('assert foo(2, 2) is False', ''))
 
@@ -387,7 +388,8 @@ def test_full_run_one_surviving_mutant(filesystem):
     result = CliRunner().invoke(climain, ['results'], catch_exceptions=False)
     print(repr(result.output))
     assert result.exit_code == 0
-    assert result.output.strip() == u"""
+    if AST_Iterator.type == 'PostOrder':
+        assert result.output.strip() == u"""
 To apply a mutant on disk:
     mutmut apply <id>
 
@@ -400,6 +402,34 @@ Survived 🙁 (1)
 ---- foo.py (1) ----
 
 1
+""".strip()
+
+
+def test_full_run_one_surviving_mutant_LO(filesystem):
+    with open(os.path.join(str(filesystem), "tests", "test_foo.py"), 'w') as f:
+        f.write(test_file_contents.replace('assert foo(2, 2) is False', ''))
+
+    result = CliRunner().invoke(climain, ['run', '--paths-to-mutate=foo.py', "--test-time-base=15.0"], catch_exceptions=False)
+    print(repr(result.output))
+    assert result.exit_code == 2
+
+    result = CliRunner().invoke(climain, ['results'], catch_exceptions=False)
+    print(repr(result.output))
+    assert result.exit_code == 0
+    if AST_Iterator.type == 'LevelOrder':
+        assert result.output.strip() == u"""
+To apply a mutant on disk:
+    mutmut apply <id>
+
+To show a mutant:
+    mutmut show <id>
+
+
+Survived 🙁 (1)
+
+---- foo.py (1) ----
+
+14
 """.strip()
 
 
@@ -633,23 +663,51 @@ def test_show_mutant_after_run_with_disabled_mutation_types(surviving_mutants_fi
 """ in result.output
 
 
-def test_run_multiple_times_with_different_mutation_types(filesystem):
+def test_run_multiple_times_with_different_mutation_types_PO(filesystem):
     """Running multiple times with different mutation types enabled should append the new mutants to the cache without
     altering existing mutants."""
     CliRunner().invoke(climain, ['run', '--paths-to-mutate=foo.py', '--enable-mutation-types=number'], catch_exceptions=False)
     result = CliRunner().invoke(climain, ['show', '1'])
-    assert """
+    if AST_Iterator.type == 'PostOrder':
+        assert """
 -c = 1
 +c = 2
 """ in result.output
     CliRunner().invoke(climain, ['run', '--paths-to-mutate=foo.py', '--enable-mutation-types=operator'], catch_exceptions=False)
     result = CliRunner().invoke(climain, ['show', '1'])
-    assert """
+    if AST_Iterator.type == 'PostOrder':
+        assert """
 -c = 1
 +c = 2
 """ in result.output, "mutant ID has changed!"
     result = CliRunner().invoke(climain, ['show', '8'])
-    assert """
+    if AST_Iterator.type == 'PostOrder':
+        assert """
+-c += 1
++c -= 1
+""" in result.output, "no new mutation types added!"
+
+
+def test_run_multiple_times_with_different_mutation_types_LO(filesystem):
+    """Running multiple times with different mutation types enabled should append the new mutants to the cache without
+    altering existing mutants."""
+    CliRunner().invoke(climain, ['run', '--paths-to-mutate=foo.py', '--enable-mutation-types=number'], catch_exceptions=False)
+    result = CliRunner().invoke(climain, ['show', '1'])
+    if AST_Iterator.type == 'LevelOrder':
+        assert """
+-c = 1
++c = 2
+""" in result.output
+    CliRunner().invoke(climain, ['run', '--paths-to-mutate=foo.py', '--enable-mutation-types=operator'], catch_exceptions=False)
+    result = CliRunner().invoke(climain, ['show', '1'])
+    if AST_Iterator.type == 'LevelOrder':
+        assert """
+-c = 1
++c = 2
+""" in result.output, "mutant ID has changed!"
+    result = CliRunner().invoke(climain, ['show', '7'])
+    if AST_Iterator.type == 'LevelOrder':
+        assert """
 -c += 1
 +c -= 1
 """ in result.output, "no new mutation types added!"
@@ -674,22 +732,46 @@ Survived 🙁 (2)
 """.strip()
 
 
-def test_show_single_id(surviving_mutants_filesystem, testdata):
+def test_show_single_id_PO(surviving_mutants_filesystem, testdata):
     CliRunner().invoke(climain, ['run', '--paths-to-mutate=foo.py', "--test-time-base=15.0"], catch_exceptions=False)
     result = CliRunner().invoke(climain, ['show', '1'])
-    assert result.output.strip() == (testdata / "surviving_mutants_show_id_1.txt").read_text("utf8").strip()
+    if AST_Iterator.type == 'PostOrder':
+        assert result.output.strip() == (testdata / "surviving_mutants_show_id_1.txt").read_text("utf8").strip()
 
 
-def test_show_all(surviving_mutants_filesystem, testdata):
+def test_show_single_id_LO(surviving_mutants_filesystem, testdata):
+    CliRunner().invoke(climain, ['run', '--paths-to-mutate=foo.py', "--test-time-base=15.0"], catch_exceptions=False)
+    result = CliRunner().invoke(climain, ['show', '2'])
+    if AST_Iterator.type == 'LevelOrder':
+        assert result.output.strip() == (testdata / "surviving_mutants_show_id_1.txt").read_text("utf8").strip()
+
+
+def test_show_all_PO(surviving_mutants_filesystem, testdata):
     CliRunner().invoke(climain, ['run', '--paths-to-mutate=foo.py', "--test-time-base=15.0"], catch_exceptions=False)
     result = CliRunner().invoke(climain, ['show', 'all'])
-    assert result.output.strip() == (testdata / "surviving_mutants_show_all.txt").read_text("utf8").strip()
+    if AST_Iterator.type == 'PostOrder':
+        assert result.output.strip() == (testdata / "surviving_mutants_show_all.txt").read_text("utf8").strip()
 
 
-def test_show_for_file(surviving_mutants_filesystem, testdata):
+def test_show_all_LO(surviving_mutants_filesystem, testdata):
+    CliRunner().invoke(climain, ['run', '--paths-to-mutate=foo.py', "--test-time-base=15.0"], catch_exceptions=False)
+    result = CliRunner().invoke(climain, ['show', 'all'])
+    if AST_Iterator.type == 'LevelOrder':
+        assert result.output.strip() == (testdata / "surviving_mutants_show_all_lo.txt").read_text("utf8").strip()
+
+
+def test_show_for_file_PO(surviving_mutants_filesystem, testdata):
     CliRunner().invoke(climain, ['run', '--paths-to-mutate=foo.py', "--test-time-base=15.0"], catch_exceptions=False)
     result = CliRunner().invoke(climain, ['show', 'foo.py'])
-    assert result.output.strip() == (testdata / "surviving_mutants_show_foo_py.txt").read_text("utf8").strip()
+    if AST_Iterator.type == 'PostOrder':
+        assert result.output.strip() == (testdata / "surviving_mutants_show_foo_py.txt").read_text("utf8").strip()
+
+
+def test_show_for_file_LO(surviving_mutants_filesystem, testdata):
+    CliRunner().invoke(climain, ['run', '--paths-to-mutate=foo.py', "--test-time-base=15.0"], catch_exceptions=False)
+    result = CliRunner().invoke(climain, ['show', 'foo.py'])
+    if AST_Iterator.type == 'LevelOrder':
+        assert result.output.strip() == (testdata / "surviving_mutants_show_foo_py_lo.txt").read_text("utf8").strip()
 
 
 def test_html_output(surviving_mutants_filesystem):
