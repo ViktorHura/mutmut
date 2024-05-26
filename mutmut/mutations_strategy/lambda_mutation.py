@@ -1,4 +1,4 @@
-from mutations_strategy.mutation import Mutation
+from mutmut.mutations_strategy.mutation import Mutation
 from parso.python.tree import Number, Keyword
 class LambdaMutation(Mutation):
     def partition_node_list(self, nodes, value):

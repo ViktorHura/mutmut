@@ -3,8 +3,7 @@
 import pytest
 from parso import parse
 
-from mutmut import mutate, ALL, Context, list_mutations, RelativeMutationID, AST_Iterator
-import mutations_strategy
+from mutmut import mutate, ALL, Context, list_mutations, RelativeMutationID, AST_Iterator, mutations_strategy
 import utils
 
 def test_matches_py3():

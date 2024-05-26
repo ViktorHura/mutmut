@@ -1,4 +1,6 @@
-import mutations_strategy
+from mutmut import mutations_strategy
+
+
 class StrategyFactory:
     @staticmethod
     def get_strategy(strategy_type):

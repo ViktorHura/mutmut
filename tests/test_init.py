@@ -3,15 +3,14 @@ from pathlib import Path
 from time import sleep
 from pytest import raises, fixture
 from unittest.mock import MagicMock, patch
-import mutations_strategy
 from mutmut import (
     run_mutation_tests,
     check_mutants,
     close_active_queues,
     read_patch_data,
     OK_KILLED,
-    Context, 
-    mutate)
+    Context,
+    mutate, mutations_strategy)
 
 
 def test_partition_node_list_no_nodes():

@@ -1,4 +1,4 @@
-from mutations_strategy.mutation import Mutation
+from mutmut.mutations_strategy.mutation import Mutation
 class DecoratorMutation(Mutation):
     def mutate(self, children, **_):
         assert children[-1].type == 'newline'

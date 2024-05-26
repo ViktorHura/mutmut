@@ -1,4 +1,4 @@
-from mutations_strategy.mutation import Mutation
+from mutmut.mutations_strategy.mutation import Mutation
 from parso.python.tree import Keyword
 class AndOrTestMutation(Mutation):
     def mutate(self, children, node, **_):

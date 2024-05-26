@@ -1,4 +1,4 @@
-from mutations_strategy.mutation import Mutation
+from mutmut.mutations_strategy.mutation import Mutation
 
 class KeywordMutation(Mutation):
     def mutate(self, value, context, **_):

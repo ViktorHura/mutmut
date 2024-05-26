@@ -1,4 +1,4 @@
-from mutations_strategy.mutation import Mutation
+from mutmut.mutations_strategy.mutation import Mutation
 
 class NumberMutation(Mutation):
     def mutate(self, value, **_):

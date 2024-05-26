@@ -1,4 +1,4 @@
-from mutations_strategy.mutation import Mutation
+from mutmut.mutations_strategy.mutation import Mutation
 import utils
 array_subscript_pattern = utils.ASTPattern("""
 _name[_any]
