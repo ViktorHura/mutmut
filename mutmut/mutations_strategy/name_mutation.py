@@ -23,6 +23,9 @@ _name(_any)
 """)
 
     def mutate(self, node, value, **_):
+        """"
+        Mutates names defined in dict simple_mutants
+        """
         simple_mutants = {
             'True': 'False',
             'False': 'True',

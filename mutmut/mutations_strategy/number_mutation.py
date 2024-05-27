@@ -1,7 +1,10 @@
 from mutmut.mutations_strategy.mutation import Mutation
-
+import math
 class NumberMutation(Mutation):
     def mutate(self, value, **_):
+        """
+        Mutates ints or float values
+        """
         suffix = ''
         if value.upper().endswith('L'):  # pragma: no cover (python 2 specific)
             suffix = value[-1]
@@ -34,7 +37,7 @@ class NumberMutation(Mutation):
             parsed = float(value)
             # This avoids all very small numbers becoming 1.0, and very
             # large numbers not changing at all
-            if (1e-5 < abs(parsed) < 1e5) or (parsed == 0.0):
+            if (1e-5 < abs(parsed) < 1e5) or math.isclose(parsed, 0.0, rel_tol=1e-9):
                 result = repr(parsed + 1)
             else:
                 result = repr(parsed * 2)

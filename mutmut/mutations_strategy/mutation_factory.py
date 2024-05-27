@@ -4,6 +4,9 @@ from mutmut import mutations_strategy
 class StrategyFactory:
     @staticmethod
     def get_mutations_dict():
+        """
+        Maps node types to Mutation subclasses
+        """
         return {
             'operator': mutations_strategy.OperatorMutation(),
             'keyword': mutations_strategy.KeywordMutation(),
@@ -22,5 +25,8 @@ class StrategyFactory:
         }
     @staticmethod
     def get_strategy(strategy_type):
+        """
+        Instantiates strategy depending on given strategy_type
+        """
         strategies = StrategyFactory.get_mutations_dict()
         return strategies.get(strategy_type, None) # returns None if key not present

@@ -8,6 +8,9 @@ class LambdaMutation(Mutation):
 
         assert False, "didn't find node to split on"
     def mutate(self, children, **_):
+        """
+        Mutates by partitioning and checking the partitioned list and returning appropriately
+        """
         pre, op, post = self.partition_node_list(children, value=':')
 
         if len(post) == 1 and getattr(post[0], 'value', None) == 'None':

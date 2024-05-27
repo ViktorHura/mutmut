@@ -2,6 +2,9 @@ from mutmut.mutations_strategy.mutation import Mutation
 from parso.python.tree import FStringStart, FStringEnd
 class FStringMutation(Mutation):
     def mutate(self, children, **_):
+        """
+        Mutates fstrings by adding XX as suffix or prefix
+        """
         fstring_start: FStringStart = children[0]
         fstring_end: FStringEnd = children[-1]
 

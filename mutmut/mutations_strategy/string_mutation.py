@@ -2,6 +2,9 @@ from mutmut.mutations_strategy.mutation import Mutation
 
 class StringMutation(Mutation):
     def mutate(self, value, **_):
+        """
+        Mutates strings by adding XX as suffix and prefix
+        """
         prefix = value[:min(x for x in [value.find('"'), value.find("'")] if x != -1)]
         value = value[len(prefix):]
 

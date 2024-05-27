@@ -2,6 +2,9 @@ from mutmut.mutations_strategy.mutation import Mutation
 from parso.python.tree import Name
 class ExpressionMutation(Mutation):
     def mutate(self, children, **_):
+        """
+        Mutates assignment expressions to None if they contain = or :
+        """
         def handle_assignment(children):
             mutation_index = -1  # we mutate the last value to handle multiple assignement
             if getattr(children[mutation_index], 'value', '---') != 'None':

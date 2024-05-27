@@ -8,6 +8,9 @@ from _name import *
 #                 ^
 """)
     def mutate(self, value, node, **_):
+        """"
+        Mutates operators to other operators, mutation mappings are returned
+        """
         if self.import_from_star_pattern.matches(node=node):
             return
 
